@@ -1,0 +1,14 @@
+# this is still wip and not used - the existing fip.bin is used instead for opensbi and u-boot
+
+# milk-v duo
+cd /compile/source
+git clone https://github.com/milkv-duo/milkv-duo-u-boot u-boot-duo
+cd u-boot-duo
+#for i in /compile/doc/milkv/misc.duo/patches/u-boot/*.patch; do echo === $i; patch -p1 < $i; done
+# most probably not required as the defconfig in the tree looks very close to those
+#cp /compile/doc/milkv/misc.duo/misc/u-boot/UNCLEAR configs
+make cvitek_cv1800b_milkv_duo_sd_defconfig
+make
+make u-boot.dtb
+
+## thinking about milk-v 256m and s not even started yet ...

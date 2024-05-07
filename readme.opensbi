@@ -1,0 +1,16 @@
+# this is still wip and not used - the existing fip.bin is used instead for opensbi and u-boot
+
+## milk-v duo
+# first make sure to do the u-boot build as described in readme.u-boot
+cd /compile/source
+git clone https://github.com/milkv-duo/milkv-duo-opensbi opensbi-duo
+cd opensbi-duo
+# maybe this should be added too: https://github.com/milkv-duo/duo-buildroot-sdk/pull/80
+# and maybe: https://github.com/milkv-duo/duo-buildroot-sdk/tree/develop/build/boards/cv180x/cv1800b_milkv_duo_sd/u-boot stuff too?
+#for i in /compile/doc/milkv/misc.duo/patches/opensbi/*.patch; do echo === $i; patch -p1 < $i; done
+# guessed from http://patchwork.ozlabs.org/project/buildroot/patch/tencent_267933F59FABC482631A00CC38E64BD83205@qq.com/
+# what about the BR2_TARGET_UBOOT_NEEDS_OPENSBI=y there?
+make PLATFORM=generic FW_PAYLOAD_PATH=../u-boot-duo/u-boot.bin FW_FDT_PATH=../u-boot-duo/u-boot.dtb
+# result: build/platform/generic/firmware/fw_payload.bin
+
+## thinking about milk-v 256m and s not even started yet ...

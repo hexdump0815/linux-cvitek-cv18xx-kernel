@@ -1,0 +1,71 @@
+# directories:
+# - /compile/doc/milkv - the files in this dir
+# - /compile/source/linux-milkv-duo - the kernel sources checked out from gitrepo
+# - /compile/result/milkv - the resulting kernel, modules etc. tar.gz files
+# - /compile/doc/kernel-config-options - https://github.com/hexdump0815/kernel-config-options
+# name: mkv-duo - milkv legacy linux v5.10.4 kernel tree with duo addtions
+
+# info: this is based on commit 4e24739a177e903f750ca5fad11fa501f3e540d1 of the milkv legacy linux v5.10.4 kernel tree
+#       some more things besides the kernel have to be compiled in the following order:
+#       - readme.opensbi (low level firmware)
+#       - readme.u-boot (u-boot)
+#       - readme.duo (kernel)
+
+cd /compile/source/linux-milkv-duo
+
+# patches
+# hack the gcc riscv arch options so that it will compile with gcc
+patch -p1 < /compile/doc/milkv/misc.duo/patches/v5.10/hack-gcc-arch-options.patch
+# add the duo 64m dts
+cp -v /compile/doc/milkv/misc.duo/misc/dts/*.dts* arch/riscv/boot/dts/cvitek
+# generate the cvi_board_memmap.h file required
+export PYTHONDONTWRITEBYTECODE=1
+/compile/doc/milkv/misc.duo/misc/mmap_conv.py --type h /compile/doc/milkv/misc.duo/misc/memmap.py arch/riscv/boot/dts/cvitek/cvi_board_memmap.h
+# fix kernel version number: + instead of -dirty at the end
+patch -p1 < /compile/doc/milkv/misc.duo/patches/v5.10/fix-kernel-version-number.patch
+
+export ARCH=riscv
+# lets start with the milkv duo linux defconfig and later adjust options from there
+#scripts/kconfig/merge_config.sh -m /compile/doc/milkv/misc.duo/misc/cvitek_cv1800b_milkv_duo_sd_defconfig /compile/doc/milkv/misc.duo/options/additional-options-special.cfg
+scripts/kconfig/merge_config.sh -m /compile/doc/milkv/misc.duo/misc/cvitek_cv1800b_milkv_duo_sd_defconfig /compile/doc/kernel-config-options/docker-options.cfg /compile/doc/kernel-config-options/options-to-remove-generic.cfg /compile/doc/milkv/misc.duo/options/options-to-remove-special.cfg /compile/doc/kernel-config-options/additional-options-generic.cfg /compile/doc/kernel-config-options/additional-options-riscv.cfg /compile/doc/milkv/misc.duo/options/additional-options-special.cfg
+( cd /compile/doc/kernel-config-options ; git rev-parse --verify HEAD ) > /compile/doc/milkv/misc.duo/options/kernel-config-options.version
+make olddefconfig
+make -j 4 Image dtbs modules
+# the tools will not work due to libc etc. differences when compiled on debian and run on alpine
+#cd tools/perf
+# without this it would fail on warnings
+#export WERROR=0
+#make
+#cd ../power/cpupower
+#make
+#cd ../../..
+export kver=`make kernelrelease`
+echo ${kver}
+# remove debug info if there and not wanted
+#find . -type f -name '*.ko' | sudo xargs -n 1 objcopy --strip-unneeded
+make modules_install
+# the tools will not work due to libc etc. differences when compiled on debian and run on alpine
+#mkdir -p /lib/modules/${kver}/tools
+#cp -v tools/perf/perf /lib/modules/${kver}/tools
+#cp -v tools/power/cpupower/cpupower /lib/modules/${kver}/tools
+#cp -v tools/power/cpupower/libcpupower.so.0.0.1 /lib/modules/${kver}/tools/libcpupower.so.0
+# make headers_install INSTALL_HDR_PATH=/usr
+mkdir -p /boot
+cp -v .config /boot/config-${kver}
+cp -v arch/riscv/boot/Image /boot/Image-${kver}
+mkdir -p /boot/dtb-${kver}
+cp -v arch/riscv/boot/dts/cvitek/*.dtb /boot/dtb-${kver}
+cp -v System.map /boot/System.map-${kver}
+# build the sepcial fip kernel image required for booting
+lzma -9 -z -f -k -v arch/riscv/boot/Image
+mkimage -f /compile/doc/milkv/misc.duo/misc/bootsd.its /boot/boot.sd-${kver}
+rm -f arch/riscv/boot/Image.lzma
+cd /boot
+# no initrd for now
+#update-initramfs -c -k ${kver}
+#tar cvzf /compile/source/linux-milkv-duo/${kver}.tar.gz /boot/Image-${kver} /boot/System.map-${kver} /boot/config-${kver} /boot/dtb-${kver} /boot/initrd.img-${kver} /boot/boot.sd-${kver} /lib/modules/${kver}
+tar cvzf /compile/source/linux-milkv-duo/${kver}.tar.gz /boot/Image-${kver} /boot/System.map-${kver} /boot/config-${kver} /boot/dtb-${kver} /boot/boot.sd-${kver} /lib/modules/${kver}
+cp -v /compile/doc/milkv/config.duo /compile/doc/milkv/config.duo.old
+cp -v /compile/source/linux-milkv-duo/.config /compile/doc/milkv/config.duo
+cp -v /compile/source/linux-milkv-duo/.config /compile/doc/milkv/config.duo-${kver}
+cp -v /compile/source/linux-milkv-duo/*.tar.gz /compile/result/milkv
