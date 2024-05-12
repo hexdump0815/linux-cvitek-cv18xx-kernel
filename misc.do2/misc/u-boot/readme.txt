@@ -1,0 +1,3 @@
+from: https://github.com/milkv-duo/duo-buildroot-sdk/tree/develop/build/boards/cv181x/cv1812cp_milkv_duo256m_sd/u-boot
+
+not sure yet if really needed ...
