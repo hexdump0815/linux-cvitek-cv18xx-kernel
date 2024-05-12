@@ -1,0 +1,13 @@
+diff --git a/scripts/setlocalversion b/scripts/setlocalversion
+index bb709eda96cd..447fd729017d 100755
+--- a/scripts/setlocalversion
++++ b/scripts/setlocalversion
+@@ -53,7 +53,7 @@ scm_version()
+ 
+ 			# If only the short version is requested, don't bother
+ 			# running further git commands
+-			if $short; then
++			if true; then
+ 				echo "+"
+ 				return
+ 			fi

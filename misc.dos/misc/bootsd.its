@@ -1,0 +1,41 @@
+/dts-v1/;
+
+/ {
+	description = "milkv duo s kernel and fdt";
+	#address-cells = <2>;
+
+	images {
+		kernel {
+			description = "kernel";
+			data = /incbin/("/compile/source/linux-milkv-dos/arch/riscv/boot/Image.lzma");
+			type = "kernel";
+			arch = "riscv";
+			os = "linux";
+			compression = "lzma";
+			load = <0x0 0x80200000>;
+			entry = <0x0 0x80200000>;
+			hash {
+				algo = "crc32";
+			};
+		};
+
+		fdt {
+			description = "fdt";
+			data = /incbin/("/compile/source/linux-milkv-dos/arch/riscv/boot/dts/cvitek/cv1813h_milkv_duos_sd.dtb");
+			type = "flat_dt";
+			arch = "riscv";
+			compression = "none";
+			hash {
+				algo = "sha256";
+			};
+		};
+	};
+
+	configurations {
+		config-cv1813h_milkv_duos_sd {
+			description = "milkv duo s kernel and fdt";
+			kernel = "kernel";
+			fdt = "fdt";
+		};
+	};
+};
